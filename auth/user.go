@@ -9,7 +9,7 @@ const (
 )
 
 type UserReader interface {
-	AssertAuthed(http.ResponseWriter, http.Request) bool
+	AssertAuthed(http.ResponseWriter, *http.Request) bool
 }
 
 type userInfo struct {
@@ -30,7 +30,7 @@ func loadUser() userInfo {
 	return userInfo{}
 }
 
-func (user userInfo) AssertAuthed(res http.ResponseWriter, req http.Request) bool {
-	http.Redirect(res, &req, LOGIN_PATH, 301)
+func (user userInfo) AssertAuthed(res http.ResponseWriter, req *http.Request) bool {
+	http.Redirect(res, req, LOGIN_PATH, 301)
 	return false
 }
