@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/multiplio/ozymandias/api"
+	"github.com/multiplio/ozymandias/auth"
 	"github.com/multiplio/ozymandias/server"
 	// "github.com/google/go-github/v25/github"
 	// "golang.org/x/oauth2"
@@ -50,11 +51,14 @@ func main() {
 	// }
 	// fmt.Print("%v", repos)
 
+	user := auth.GetUser()
+
 	address := ":5000"
 	buildPath := path.Clean("ui/build")
 
 	mux := http.NewServeMux()
-	mux.Handle("/api/", api.Handler())
+	mux.Handle("/login/", auth.Handler())
+	mux.Handle("/api/", api.Handler(user))
 	mux.Handle("/", server.Handler(buildPath))
 
 	srv := &http.Server{

@@ -1,9 +1,10 @@
-package api
+package auth
 
 import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,6 +15,18 @@ import (
 )
 
 var OAuthAppURL = "https://multiplio.github.io/ozymandias/"
+
+// Handler returns http.Handler for API endpoint
+func Handler() http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set("Content-Type", "application/json")
+
+		body := "login"
+
+		res.WriteHeader(200)
+		res.Write([]byte(body))
+	}
+}
 
 func FindOrCreateToken(user, password, twoFactorCode string) (token string, err error) {
 	if len(password) >= 40 && isToken(password) {
