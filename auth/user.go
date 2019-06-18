@@ -1,11 +1,16 @@
 package auth
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
+
+	"github.com/multiplio/ozymandias/version"
 )
 
 const (
-	LOGIN_PATH = "/login/"
+	login_path  = "/login"
+	config_path = "~/.config/" + version.AppName + "/user"
 )
 
 type UserReader interface {
@@ -13,7 +18,8 @@ type UserReader interface {
 }
 
 type userInfo struct {
-	cookie string
+	Cookie string
+	Token  string
 }
 
 var user userInfo
@@ -27,10 +33,30 @@ func GetUser() UserReader {
 }
 
 func loadUser() userInfo {
-	return userInfo{}
+	content, err := ioutil.ReadFile(config_path)
+	if err != nil {
+		return userInfo{}
+	}
+
+	var config userInfo
+	err = json.Unmarshal(content, &config)
+	if err != nil {
+		return userInfo{}
+	}
+
+	return config
 }
 
-func (user userInfo) AssertAuthed(res http.ResponseWriter, req *http.Request) bool {
-	http.Redirect(res, req, LOGIN_PATH, 301)
+func (u userInfo) saveUser() error {
+	data, err := json.Marshal(u)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(config_path, data, 0600)
+}
+
+func (u userInfo) AssertAuthed(res http.ResponseWriter, req *http.Request) bool {
+	http.Redirect(res, req, login_path, http.StatusTemporaryRedirect)
 	return false
 }

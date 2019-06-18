@@ -16,19 +16,48 @@ import (
 
 var OAuthAppURL = "https://multiplio.github.io/ozymandias/"
 
-// Handler returns http.Handler for API endpoint
+// Handler returns http.Handler for authentication
 func Handler() http.HandlerFunc {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/auth", authHandler)
+	mux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		http.Redirect(res, req, "/login", http.StatusTemporaryRedirect)
+	})
+
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-Type", "application/json")
-
-		body := "login"
-
-		res.WriteHeader(200)
-		res.Write([]byte(body))
+		mux.ServeHTTP(res, req)
 	}
 }
 
-func FindOrCreateToken(user, password, twoFactorCode string) (token string, err error) {
+func authHandler(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		res.WriteHeader(http.StatusBadRequest)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		fmt.Fprintf(res, "ParseForm() err: %v", err)
+		return
+	}
+
+	username := req.FormValue("username")
+	password := req.FormValue("password")
+	fmt.Println("User: " + username + " Pass: " + password)
+
+	token, err := findOrCreateToken(username, password, "")
+	if err != nil {
+		res.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(res, err.Error())
+		return
+	}
+
+	user.Token = token
+
+	res.WriteHeader(http.StatusOK)
+	fmt.Fprint(res, "Logged in.")
+}
+
+func findOrCreateToken(user string, password string, twoFactorCode string) (token string, err error) {
 	if len(password) >= 40 && isToken(password) {
 		return password, nil
 	}
@@ -47,10 +76,11 @@ func FindOrCreateToken(user, password, twoFactorCode string) (token string, err 
 		NoteURL: &OAuthAppURL,
 	}
 
-	*request.Note, err = authTokenNote()
+	note, err := authTokenNote()
 	if err != nil {
 		return
 	}
+	request.Note = &note
 
 	auth, res, err := client.Authorizations.Create(context.Background(), &request)
 	if err != nil {
