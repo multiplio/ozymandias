@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,12 +19,17 @@ import (
 func main() {
 	user := auth.GetUser()
 
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	address := ":5000"
-	buildPath := path.Clean("ui/build")
+	buildPath := path.Clean(pwd + "/ui/build")
 
 	mux := http.NewServeMux()
-	mux.Handle("/login/", auth.Handler())
-	mux.Handle("/api/", api.Handler(user))
+	mux.Handle("/auth/", http.StripPrefix("/auth", auth.Handler()))
+	mux.Handle("/api/", http.StripPrefix("/api", api.Handler(user)))
 	mux.Handle("/", server.Handler(buildPath))
 
 	srv := &http.Server{
