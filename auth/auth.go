@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v25/github"
+	"golang.org/x/oauth2"
 
 	"github.com/multiplio/ozymandias/version"
 )
@@ -101,15 +102,20 @@ func findOrCreateToken(user string, password string, twoFactorCode string) (toke
 	return
 }
 
-func isToken(password string) bool {
-	// api.PrepareRequest = func(req *http.Request) {
-	// 	req.Header.Set("Authorization", "token "+password)
-	// }
+func isToken(token string) bool {
+	ctx := context.Background()
 
-	// res, _ := api.Get("user")
-	// if res != nil && res.StatusCode == 200 {
-	// 	return true
-	// }
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+
+	_, res, err := client.Users.Get(ctx, "")
+
+	if err == nil && res != nil && res.StatusCode == 200 {
+		return true
+	}
 	return false
 }
 
