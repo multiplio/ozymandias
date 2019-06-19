@@ -42,9 +42,9 @@ func authHandler(res http.ResponseWriter, req *http.Request) {
 
 	username := req.FormValue("username")
 	password := req.FormValue("password")
-	fmt.Println("User: " + username + " Pass: " + password)
+	otp := req.FormValue("otp")
 
-	token, err := findOrCreateToken(username, password, "")
+	token, err := findOrCreateToken(username, password, otp)
 	if err != nil {
 		res.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(res, err.Error())
